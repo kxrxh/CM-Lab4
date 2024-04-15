@@ -79,7 +79,8 @@ public:
     return ss.str();
   }
 
-  std::string get_string_function(const std::vector<double> &coefficients) {
+  std::string
+  get_string_function(const std::vector<double> &coefficients) const {
     switch (type) {
     case Function::Type::Polynomial:
       return get_polynomial_string(coefficients);

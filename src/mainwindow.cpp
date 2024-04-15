@@ -93,7 +93,7 @@ void MainWindow::calculate() {
             "calculator.setExpression({ id: 'point%1', latex: '(%2, %3)' })")
             .arg(QString::number(i), QString::number(x[i]),
                  QString::number(y[i]));
-    ui->webview->page()-> runJavaScript(query);
+    ui->webview->page()->runJavaScript(query);
   }
 
   auto n = ui->point_table->rowCount();

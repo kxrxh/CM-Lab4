@@ -1,6 +1,7 @@
 #ifndef F0C149B2_1688_4B08_AA51_D271DD3E55A3
 #define F0C149B2_1688_4B08_AA51_D271DD3E55A3
 
+#include "table_event_handler.hpp"
 #include "ui_mainwindow.hpp"
 #include <QDateTime>
 #include <QDebug>
@@ -10,7 +11,6 @@
 #include <QtCharts/QChart>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
-#include "table_event_handler.hpp"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
