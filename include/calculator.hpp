@@ -1,126 +1,24 @@
 #ifndef B31A80AB_5724_4C6A_81ED_F301F749F738
 #define B31A80AB_5724_4C6A_81ED_F301F749F738
+#include "math_function.hpp"
 
 #include <algorithm>
-#include <cmath>
-#include <cstdint>
-#include <exception>
-#include <iomanip>
 #include <numeric>
-#include <stdexcept>
 #include <vector>
 
-class Function {
-public:
-  enum Type : uint8_t {
-    Polynomial,
-    Exponential,
-    Logarithmic,
-    Power,
-  };
-  explicit Function(Type type, int m) : m(m), type(type) {}
-  explicit Function(Type type) : m(0), type(type) {}
-  int get_m() const {
-    if (type == Polynomial) {
-      return m;
-    }
-    throw std::invalid_argument("Cannot get m for not polynomial function");
-  }
-
-  Type get_type() const { return type; }
-
-  std::string
-  get_polynomial_string(const std::vector<double> &coefficients) const {
-    std::stringstream ss;
-    bool first = true;
-    for (int i = static_cast<int>(coefficients.size()) - 1; i >= 0; --i) {
-      double coef = coefficients[i];
-      if (coef != 0.0 || (i == 0 && coefficients.size() == 1)) {
-        if (!first) {
-          ss << (coef >= 0.0 ? "+" : "-");
-        }
-        ss << std::fixed << std::setprecision(4) << std::abs(coef);
-        if (i > 0) {
-          ss << "x";
-          if (i > 1) {
-            ss << "^" << i;
-          }
-        }
-        first = false;
-      }
-    }
-    if (first) {
-      ss << "0";
-    }
-    return ss.str();
-  }
-
-  std::string
-  get_exponential_string(const std::vector<double> &coefficients) const {
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(4) << coefficients[0] << R"(*\\exp()"
-       << coefficients[1] << "x"
-       << ")";
-    return ss.str();
-  }
-
-  std::string
-  get_logarithmic_string(const std::vector<double> &coefficients) const {
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(4) << coefficients[0] << " + "
-       << coefficients[1] << R"(*\\ln(x))";
-    return ss.str();
-  }
-
-  std::string get_power_string(const std::vector<double> &coefficients) const {
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(4) << coefficients[0] << "x^"
-       << coefficients[1];
-    return ss.str();
-  }
-
-  std::string
-  get_string_function(const std::vector<double> &coefficients) const {
-    switch (type) {
-    case Function::Type::Polynomial:
-      return get_polynomial_string(coefficients);
-    case Function::Type::Exponential:
-      return get_exponential_string(coefficients);
-    case Function::Type::Logarithmic:
-      return get_logarithmic_string(coefficients);
-    case Function::Type::Power:
-      return get_power_string(coefficients);
-    default:
-      throw std::invalid_argument("Unknown function type");
-    }
-  }
-
-  std::string to_string() const {
-    switch (type) {
-    case Polynomial:
-      return "Polynomial(" + std::to_string(m) + ")";
-    case Exponential:
-      return "Exponential";
-    case Logarithmic:
-      return "Logarithmic";
-    case Power:
-      return "Power";
-    }
-    throw std::invalid_argument("Unknown function type");
-  }
-
-private:
-  int m;
-  Type type;
-};
-
+/**
+ * @brief The ApproximationCalculator class provides methods for function
+ * approximation.
+ */
 class ApproximationCalculator {
 private:
-  Function function;
-  std::vector<double> x;
-  std::vector<double> y;
-  std::vector<double> coefficients;
-  constexpr static double ACC = 1e-4;
+  Function function;     /**< The type of function to approximate. */
+  std::vector<double> x; /**< The x-values of the data points. */
+  std::vector<double> y; /**< The y-values of the data points. */
+  std::vector<double>
+      coefficients; /**< The coefficients of the approximated function. */
+  constexpr static double ACC =
+      1e-4; /**< The accuracy for approximation calculations. */
 
   static double get_function_value(Function func,
                                    std::vector<double> const &coefficients,
@@ -247,6 +145,13 @@ private:
   }
 
 public:
+  /**
+   * @brief Constructs an ApproximationCalculator object with the specified
+   * function and data points.
+   * @param func The type of function to approximate.
+   * @param x The x-values of the data points.
+   * @param y The y-values of the data points.
+   */
   ApproximationCalculator(Function func, std::vector<double> const &x,
                           std::vector<double> const &y)
       : function(func), x(x), y(y) {}
@@ -298,6 +203,11 @@ public:
     return std::get<1>(deviations[0]);
   }
 
+  /**
+   * @brief Calculates the Pearson correlation coefficient for the given data.
+   * @return A pair containing the correlation coefficient and an error message
+   * (if any).
+   */
   std::pair<double, std::string> calculate_pearson_correlation() {
     auto n = this->x.size();
     auto sum_x = std::accumulate(x.begin(), x.end(), 0.0);
@@ -328,6 +238,10 @@ public:
     return {r, ""};
   }
 
+  /**
+   * @brief Retrieves the phi values calculated using the approximated function.
+   * @return The phi values calculated using the approximated function.
+   */
   std::vector<double> get_phi_values() const {
     std::vector<double> phi_values;
     phi_values.reserve(x.size());
@@ -337,6 +251,11 @@ public:
     return phi_values;
   }
 
+  /**
+   * @brief Retrieves the epsilon values calculated using the approximated
+   * function.
+   * @return The epsilon values calculated using the approximated function.
+   */
   std::vector<double> get_epsilon_values() const {
     std::vector<double> epsilon_values;
     epsilon_values.reserve(x.size());
@@ -347,6 +266,11 @@ public:
     return epsilon_values;
   }
 
+
+  /**
+   * @brief Calculates the coefficients of the approximated function.
+   * @return The coefficients of the approximated function.
+   */
   std::vector<double> calculate_coefficients() {
     coefficients =
         approximation_calculation(function, static_cast<int>(x.size()), x, y);
