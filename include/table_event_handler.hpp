@@ -20,10 +20,11 @@ protected:
         if (QList<QTableWidgetItem *> selectedItems =
                 tableWidget->selectedItems();
             !selectedItems.isEmpty()) {
+
           // Show confirmation dialog before deleting
           QMessageBox::StandardButton reply = QMessageBox::question(
-              tableWidget, "Delete Item",
-              "Are you sure you want to delete the selected item?",
+              tableWidget, "Delete Items",
+              "Are you sure you want to delete the selected items?",
               QMessageBox::Yes | QMessageBox::No);
           if (reply == QMessageBox::Yes) {
             for (QTableWidgetItem const *item : selectedItems) {

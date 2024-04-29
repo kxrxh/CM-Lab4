@@ -41,7 +41,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   ui->webview->setHtml(html);
 }
 
-void MainWindow::clear_points() { ui->point_table->setRowCount(0); }
+void MainWindow::clear_points() {
+  ui->point_table->setRowCount(0);
+  ui->webview->page()->runJavaScript("calculator.setBlank()");
+}
 
 void MainWindow::add_point() {
   auto row = ui->point_table->rowCount();
@@ -64,7 +67,7 @@ void MainWindow::load_file() {
     return;
   }
   auto lines = parser.getLines();
-  ui->point_table->setRowCount(lines.size());
+  ui->point_table->setRowCount(static_cast<int>(lines.size()));
   for (int i = 0; i < lines.size(); i++) {
     auto [x, y] = lines[i];
     ui->point_table->setItem(i, 0, new QTableWidgetItem(x));
@@ -82,9 +85,13 @@ void MainWindow::show_file_dialog() {
 void MainWindow::calculate() {
   std::vector<double> x;
   x.reserve(ui->point_table->rowCount());
+
   std::vector<double> y;
   y.reserve(ui->point_table->rowCount());
+
   ui->webview->page()->runJavaScript("calculator.setBlank()");
+
+  // Draw points on graph
   for (int i = 0; i < ui->point_table->rowCount(); i++) {
     x.push_back(ui->point_table->item(i, 0)->text().toDouble());
     y.push_back(ui->point_table->item(i, 1)->text().toDouble());
@@ -96,44 +103,59 @@ void MainWindow::calculate() {
     ui->webview->page()->runJavaScript(query);
   }
 
+  // Calculation
   auto n = ui->point_table->rowCount();
+
+  // Getting function
   auto func = ApproximationCalculator::find_best_function(n, x, y);
+
   auto calc = ApproximationCalculator(func, x, y);
+
   auto coefficients = calc.calculate_coefficients();
   auto phi_values = calc.get_phi_values();
   auto eps_values = calc.get_epsilon_values();
-  auto pearson = calc.calculate_pearson_correlation();
+  auto [pearson_correlation, error] = calc.calculate_pearson_correlation();
+
   QDateTime currentDateTime = QDateTime::currentDateTime();
   QString currentTimeString = currentDateTime.toString("yyyy-MM-dd hh:mm:ss");
   ui->result_output->append("<h3> Approximation result from " +
                             currentTimeString + ":</h3>");
 
-  if (!pearson.second.empty()) {
-    ui->result_output->append(
-        "<b>" + QString::fromUtf8(pearson.second.c_str()) + "</b>");
+  if (!error.empty()) {
+    ui->result_output->append("<b>" + QString::fromUtf8(error.c_str()) +
+                              "</b>");
     return;
   }
+
   ui->result_output->append(
       "<b>Best matching function:</b> " +
       QString::fromUtf8(func.to_string().c_str()) + " " +
       QString::fromUtf8(func.get_string_function(coefficients).c_str()));
+
+  // Print pearson correlation error
   ui->result_output->append("<b>Pearson correlation:</b> " +
-                            QString::number(pearson.first));
+                            QString::number(pearson_correlation));
+
   ui->result_output->append("<b>Coefficients:</b>");
-  for (int i = 0; i < coefficients.size(); i++) {
-    ui->result_output->append(QString::number(coefficients[i]));
+  for (auto const &coefficient : coefficients) {
+    ui->result_output->append(QString::number(coefficient));
   }
+
+  // Print phi values and epsilon values
   ui->result_output->append("<b>Phi values:</b>");
-  for (int i = 0; i < phi_values.size(); i++) {
-    ui->result_output->append(QString::number(phi_values[i]));
+  for (auto const &phi_value : phi_values) {
+    ui->result_output->append(QString::number(phi_value));
   }
+
+  // Print epsilon values
   ui->result_output->append("<b>Epsilon values:</b>");
-  for (int i = 0; i < eps_values.size(); i++) {
-    ui->result_output->append(QString::number(eps_values[i]));
+  for (auto const &eps_value : eps_values) {
+    ui->result_output->append(QString::number(eps_value));
   }
-  QString js_expr =
+
+  // Update graph
+  ui->webview->page()->runJavaScript(
       QString("calculator.setExpression({ id: '%1', latex: "
               "'%2', color: Desmos.Colors.BLUE })")
-          .arg("graph", func.get_string_function(coefficients).c_str());
-  ui->webview->page()->runJavaScript(js_expr);
+          .arg("graph", func.get_string_function(coefficients).c_str()));
 }
